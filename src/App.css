@@ -2,6 +2,8 @@
   text-align: center;
   min-height: 100vh;
   padding-top: 10em;
+  max-width: 640px;
+  margin: 0 auto;
 }
 
 .App-logo {
@@ -22,18 +24,19 @@
   top: 0;
   right: 0;
   left: 0;
+  z-index: 1;
+  box-shadow: 0 6px 12px 0 rgba(0,0,0,.2);
 }
 
 .App-link {
   color: #61dafb;
 }
 
-.FileList td {
-  white-space: nowrap;
-  min-height: 2em;
-  vertical-align: middle;
+.FileList .thumbnail {
+  max-height: 4em;
 }
 
-.FileList td img {
-  max-height: 4em;
+.image-large .image-large {
+  max-height: 300px;
+  max-width: 300px;
 }

@@ -32,8 +32,23 @@
   color: #61dafb;
 }
 
+.FileActions {
+    position: absolute;
+    bottom: -10px;
+}
+
 .FileList .thumbnail {
-  max-height: 4em;
+    max-height: 48px;
+    margin-top: 2px;
+}
+
+.FileList a {
+    text-decoration: none;
+    color: inherit;
+}
+
+.FileList .Preview {
+  margin-right: 1em;
 }
 
 .image-large .image-large {

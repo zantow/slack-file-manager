@@ -10,6 +10,7 @@ import List from "@material-ui/core/List";
 import ListItem from "@material-ui/core/ListItem";
 import {Tooltip} from "./Tooltip";
 import {ListItemSecondaryAction} from "@material-ui/core";
+import Fab from "@material-ui/core/Fab";
 
 const clientId = '60448998578.533653717520';
 const clientSecret = '3bad701c22c6ed3770101b786bff03a6';
@@ -125,7 +126,7 @@ class App extends Component<AppProps, AppState> {
           }})
           .then(() => {
             delete selectedItems[key];
-            this.setState({ files: this.state.files.filter(file => file.id)});
+            this.setState({ files: this.state.files.filter(file => file.id !== key)});
           });
       }
     }
@@ -140,28 +141,36 @@ class App extends Component<AppProps, AppState> {
             <img src={logo} className="App-logo" alt="logo" />
             Slack File Manager
           </p>
+            <div className="FileActions">
+            {this.selectedFiles() && <Fab disabled={!this.selectedFiles()} color="secondary" variant="extended" onClick={() => {
+                this.deleteFiles();
+            }}>Delete Selected</Fab>}
+            </div>
         </header>
         <List className="FileList">
           {files.map((file: SlackFile, num: number) => (
-          <ListItem key={file.id} button onClick={() => {
+          <ListItem key={file.id} button disabled={file.is_external} onClick={() => {
             this.setState({ selectedItems: { ...selectedItems, [file.id]: !selectedItems[file.id]}});
           }}>
             <Checkbox
                 checked={selectedItems[file.id] ? true : false}
                 tabIndex={-1}
+                disabled={file.is_external}
             />
             <UserInfo userId={file.user} />
-            <ListItemText primary={<a href={file.permalink}>{file.name}</a>} secondary={new Date(file.timestamp*1000).toDateString()} />
+            <ListItemText primary={file.name} secondary={new Date(file.timestamp*1000).toDateString()} />
             <ListItemSecondaryAction>
-              {this.renderPreview(file)}
+              <div className="Preview">
+                {this.renderPreview(file)}
+              </div>
             </ListItemSecondaryAction>
           </ListItem>
           ))}
         </List>
 
-        <Button action={() => {
+        <Fab color="default" variant="extended" onClick={() => {
           this.fetchFiles(this.state.lastPage + 1);
-        }}>Load More...</Button>
+        }}>Load More...</Fab>
       </div>
     );
   }
@@ -185,6 +194,16 @@ class App extends Component<AppProps, AppState> {
     }
     return null;
   }
+
+    private selectedFiles() {
+        const { selectedItems } = this.state;
+        for (const key of Object.keys(selectedItems)) {
+            if (selectedItems[key]) {
+                return true;
+            }
+        }
+        return false;
+    }
 }
 
 interface UserInfoProps {
@@ -216,17 +235,19 @@ class UserInfo extends React.Component<UserInfoProps, UserInfoState> {
   render() {
     const { user } = this.state;
     if (!user) return null;
+    const userName = user.profile.display_name || user.name;
+    const children = user.profile.image_48 ? <img src={user.profile.image_48} alt={userName} /> : <span>{userName}</span>;
     return (
         <Avatar>
           <Tooltip
               placement="right"
               title={
                 <React.Fragment>
-                  {user.profile.display_name}
+                  {userName}
                 </React.Fragment>
               }
           >
-            <img src={user.profile.image_48} alt={user.profile.display_name} />
+              {children}
           </Tooltip>
         </Avatar>
     );

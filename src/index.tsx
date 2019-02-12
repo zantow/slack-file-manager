@@ -8,11 +8,11 @@ import { MuiPickersUtilsProvider } from 'material-ui-pickers';
 import DateFnsUtils from '@date-io/date-fns';
 
 function Apps() {
-    return (
-        <MuiPickersUtilsProvider utils={DateFnsUtils}>
-            <App />
-        </MuiPickersUtilsProvider>
-    );
+  return (
+    <MuiPickersUtilsProvider utils={DateFnsUtils}>
+      <App />
+    </MuiPickersUtilsProvider>
+  );
 }
 ReactDOM.render(<Apps />, document.getElementById('root'));
 

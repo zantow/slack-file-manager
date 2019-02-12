@@ -11,13 +11,15 @@ import ListItem from "@material-ui/core/ListItem";
 import {Tooltip} from "./Tooltip";
 import {ListItemSecondaryAction} from "@material-ui/core";
 import Fab from "@material-ui/core/Fab";
+import {AudioPlayer} from "./AudioPlayer";
+import {InlineDatePicker} from "material-ui-pickers";
 
 const clientId = '60448998578.533653717520';
 const clientSecret = '3bad701c22c6ed3770101b786bff03a6';
 const scopes = 'users:read,files:read,files:write:user';
 const perPage = 20;
 
-const url = window.location.host === 'localhost' ? 'http://localhost:3000/' : 'https://slack-file-manager.herokuapp.com/';
+const url = `${window.location.protocol}//${window.location.host}/`;
 
 /**
  * Authorize or redirect for authorization
@@ -54,6 +56,7 @@ interface SlackFile {
   user: string;
   mimetype: string;
   url_private: string;
+  url_private_download: string;
 }
 
 interface SlackUser {
@@ -75,6 +78,7 @@ interface AppState {
   files: SlackFile[];
   selectedItems: { [key: string]: boolean };
   lastPage: number;
+  selectedDate?: Date;
 }
 
 class App extends Component<AppProps, AppState> {
@@ -89,8 +93,10 @@ class App extends Component<AppProps, AppState> {
   }
 
   fetchFiles(page = 1) {
+    const { selectedDate } = this.state;
     // could list based on timestamp using: ts_to=${timestamp}
-    fetch(`https://slack.com/api/files.list?token=${getAccessToken()}&count=${perPage}&page=${page}`)
+    const dateFilter = selectedDate ? `&ts_to=${selectedDate.getTime() / 1000}` : '';
+    fetch(`https://slack.com/api/files.list?token=${getAccessToken()}&count=${perPage}&page=${page}${dateFilter}`)
       .then(res =>  res.json())
       .then(rsp => {
         if (!rsp.ok) {
@@ -133,7 +139,7 @@ class App extends Component<AppProps, AppState> {
   }
 
   render() {
-    const { files, selectedItems } = this.state;
+    const { files, selectedItems, selectedDate } = this.state;
     return (
       <div className="App">
         <header className="App-header">
@@ -145,6 +151,13 @@ class App extends Component<AppProps, AppState> {
             {this.selectedFiles() && <Fab disabled={!this.selectedFiles()} color="secondary" variant="extended" onClick={() => {
                 this.deleteFiles();
             }}>Delete Selected</Fab>}
+            </div>
+            <div className="DateFilter">
+                <InlineDatePicker
+                    label="Before"
+                    value={selectedDate}
+                    onChange={dt => this.setState({selectedDate: dt}, () => this.fetchFiles())}
+                />
             </div>
         </header>
         <List className="FileList">
@@ -192,6 +205,9 @@ class App extends Component<AppProps, AppState> {
         </Tooltip>
       );
     }
+      if (/^audio/.test(file.mimetype)) {
+          return <AudioPlayer audioFileUrl={file.url_private}/>
+      }
     return null;
   }
 
@@ -229,12 +245,25 @@ class UserInfo extends React.Component<UserInfoProps, UserInfoState> {
             }
             this.setState({user: userCache[rsp.user.id] = rsp.user});
           });
+    } else {
+        this.setState({user});
     }
   }
 
   render() {
     const { user } = this.state;
-    if (!user) return null;
+    if (!user) return <Avatar>
+        <Tooltip
+            placement="right"
+            title={
+                <React.Fragment>
+                    {this.props.userId}
+                </React.Fragment>
+            }
+        >
+            <span>{this.props.userId}</span>
+        </Tooltip>
+    </Avatar>;
     const userName = user.profile.display_name || user.name;
     const children = user.profile.image_48 ? <img src={user.profile.image_48} alt={userName} /> : <span>{userName}</span>;
     return (

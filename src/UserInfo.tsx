@@ -1,9 +1,7 @@
-import { getAccessToken, SlackUser } from './SlackApi';
+import { get, SlackUser, userCache } from './SlackApi';
 import React from 'react';
 import { Tooltip } from './Tooltip';
 import { Avatar } from '@material-ui/core';
-
-const userCache: { [key: string]: SlackUser } = {};
 
 interface UserInfoProps {
   userId: string;
@@ -20,14 +18,11 @@ export class UserInfo extends React.Component<UserInfoProps, UserInfoState> {
   componentWillMount(): void {
     const user = userCache[this.props.userId];
     if (!user) {
-      fetch(`https://slack.com/api/users.info?token=${getAccessToken()}&user=${this.props.userId}`)
-        .then(res => res.json())
-        .then(rsp => {
-          if (!rsp.ok) {
-            throw new Error('Invalid request');
-          }
-          this.setState({ user: userCache[rsp.user.id] = rsp.user });
-        });
+      get('users.info', {
+        user: this.props.userId,
+      }).then(rsp => {
+        this.setState({ user: userCache[rsp.user.id] = rsp.user });
+      });
     } else {
       this.setState({ user });
     }

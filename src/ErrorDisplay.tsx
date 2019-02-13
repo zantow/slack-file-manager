@@ -15,7 +15,7 @@ export class ErrorDisplay extends React.Component<Props, State> {
   render() {
     if (this.state.error) {
       // You can render any custom fallback UI
-      return <h1>Something went wrong.</h1>;
+      return <h1>Something went wrong: {JSON.stringify(this.state.error)}</h1>;
     }
 
     return this.props.children;

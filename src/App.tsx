@@ -5,21 +5,21 @@ import Checkbox from '@material-ui/core/Checkbox';
 import ListItemText from '@material-ui/core/ListItemText';
 import List from '@material-ui/core/List';
 import ListItem from '@material-ui/core/ListItem';
-import { Tooltip } from './Tooltip';
 import { ListItemSecondaryAction } from '@material-ui/core';
 import Fab from '@material-ui/core/Fab';
-import { AudioPlayer } from './AudioPlayer';
 import { InlineDatePicker } from 'material-ui-pickers';
 import Launch from '@material-ui/icons/Launch';
 import {
-  authorize,
   get,
-  getAccessToken,
+  getCurrentUser,
+  getUsers,
   post,
+  redirectUrl,
   SlackChannel,
   SlackFile,
   SlackPin,
   SlackUser,
+  userName,
 } from './SlackApi';
 import { ErrorDisplay } from './ErrorDisplay';
 import { UserSelector } from './UserSelector';
@@ -28,8 +28,10 @@ import { AutoScroll } from './AutoScroll';
 import CircularProgress from '@material-ui/core/CircularProgress';
 import { Link, Lock } from '@material-ui/icons';
 import filesize from 'filesize';
+import Avatar from '@material-ui/core/Avatar';
+import { FilePreview } from './FilePreview';
 
-const perPage = 20;
+const perPage = 200;
 
 interface AppProps {}
 
@@ -42,6 +44,7 @@ interface AppState {
   totalPages: number;
   selectedDate?: Date;
   selectedUser?: SlackUser;
+  currentUser?: SlackUser | null;
 }
 
 export class App extends Component<AppProps, AppState> {
@@ -55,12 +58,29 @@ export class App extends Component<AppProps, AppState> {
   };
 
   componentWillMount(): void {
-    if (!getAccessToken()) {
-      authorize();
-    } else {
-      this.fetchPins();
-      this.fetchFiles();
-    }
+    getCurrentUser().then(u => {
+      if (u) {
+        // This user does not have an id, we're going to best guess based on the display name...
+        this.setState({ currentUser: u, selectedUser: u }, () => {
+          getUsers().then(users => {
+            const usr = users.filter(m => userName(m) === userName(u))[0];
+            const autoSelectUser = usr.is_admin ? undefined : usr;
+            this.setState({ currentUser: usr, selectedUser: autoSelectUser }, () => {
+              this.fetchPins();
+              this.fetchFiles();
+            });
+          });
+        });
+      } else {
+        this.setState({ currentUser: u });
+      }
+    });
+    // if (!getAccessToken()) {
+    //   authorize();
+    // } else {
+    //   this.fetchPins();
+    //   this.fetchFiles();
+    // }
   }
 
   fetchFiles(page = 1) {
@@ -101,13 +121,21 @@ export class App extends Component<AppProps, AppState> {
     get('channels.list', {
       exclude_archived: true,
       exclude_members: true,
-    }).then(rsp => {
-      for (const channel of rsp.channels as SlackChannel[]) {
-        get('pins.list', { channel: channel.id }).then(rsp => {
-          this.setState({ pins: [...this.state.pins, ...rsp.items] });
-        });
-      }
-    });
+    })
+      .then(rsp => {
+        for (const channel of rsp.channels as SlackChannel[]) {
+          get('pins.list', { channel: channel.id })
+            .then(rsp => {
+              this.setState({ pins: [...this.state.pins, ...rsp.items] });
+            })
+            .catch(err => {
+              console.error(err);
+            });
+        }
+      })
+      .catch(err => {
+        console.error(err);
+      });
   }
 
   deleteFiles() {
@@ -148,13 +176,45 @@ export class App extends Component<AppProps, AppState> {
   }
 
   render() {
-    const { files, selectedItems, selectedDate } = this.state;
+    const { files, selectedItems, selectedDate, currentUser } = this.state;
+    if (!currentUser) {
+      return (
+        <div>
+          <header
+            className="App-header"
+            style={{ height: '100%', paddingBottom: '15%', boxSizing: 'border-box' }}
+          >
+            <img src={logo} className="App-logo" alt="logo" />
+            <span>Slack File Manager</span>
+            <div className="ConnectToSlackButton">
+              <a
+                href={`https://slack.com/oauth/authorize?client_id=60448998578.533653717520&scope=files:write:user,users:read,pins:read,channels:read,files:read&redirect_uri=${redirectUrl}`}
+              >
+                <img
+                  alt="Sign in with Slack"
+                  height="40"
+                  width="172"
+                  src="https://platform.slack-edge.com/img/sign_in_with_slack.png"
+                  srcSet="https://platform.slack-edge.com/img/sign_in_with_slack.png 1x, https://platform.slack-edge.com/img/sign_in_with_slack@2x.png 2x"
+                />
+              </a>
+            </div>
+          </header>
+        </div>
+      );
+    }
     return (
       <div className="App">
         <ErrorDisplay>
           <header className="App-header">
             <img src={logo} className="App-logo" alt="logo" />
             <span>Slack File Manager</span>
+            <div className="CurrentUserInfo">
+              <Avatar>
+                <img src={currentUser.profile.image_48} alt={userName(currentUser)} />
+              </Avatar>
+              <span>{userName(currentUser)}</span>
+            </div>
           </header>
           <div className="FilterPanel">
             <ListItem>
@@ -175,9 +235,9 @@ export class App extends Component<AppProps, AppState> {
             </ListItem>
           </div>
           <div className="FileActions">
-            {this.selectedFiles() && (
+            {this.getSelectedFiles() && (
               <Fab
-                disabled={!this.selectedFiles()}
+                disabled={!this.getSelectedFiles()}
                 color="secondary"
                 variant="extended"
                 onClick={() => {
@@ -206,7 +266,7 @@ export class App extends Component<AppProps, AppState> {
                   }}
                 >
                   <Checkbox
-                    checked={selectedItems[file.id] ? true : false}
+                    checked={selectedItems[file.id]}
                     tabIndex={-1}
                     disabled={this.isPinned(file)}
                   />
@@ -238,7 +298,7 @@ export class App extends Component<AppProps, AppState> {
                           <Link />
                         </a>
                       )}
-                      {!file.is_external && this.renderPreview(file)}
+                      {!file.is_external && <FilePreview file={file} />}
                     </div>
                   </ListItemSecondaryAction>
                 </ListItem>
@@ -257,30 +317,7 @@ export class App extends Component<AppProps, AppState> {
     );
   }
 
-  private renderPreview(file: SlackFile) {
-    if (/^image/.test(file.mimetype)) {
-      return (
-        <Tooltip
-          placement="left"
-          title={
-            <React.Fragment>
-              <div className="image-large">
-                <img className="image-large" src={file.url_private} />
-              </div>
-            </React.Fragment>
-          }
-        >
-          <img className="thumbnail" src={file.url_private} />
-        </Tooltip>
-      );
-    }
-    if (/^audio/.test(file.mimetype)) {
-      return <AudioPlayer audioFileUrl={file.url_private} />;
-    }
-    return null;
-  }
-
-  private selectedFiles() {
+  private getSelectedFiles() {
     const { selectedItems } = this.state;
     for (const key of Object.keys(selectedItems)) {
       if (selectedItems[key]) {

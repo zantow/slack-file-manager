@@ -20,12 +20,21 @@ export class AudioPlayer extends React.Component<Props, State> {
   render() {
     const { playing, position } = this.state;
     return (
-      <div className="AudioPlayer">
+      <div
+        className="AudioPlayer"
+        onWheel={e => {
+          this.setAudioPosition(e.deltaY);
+          e.stopPropagation();
+          e.preventDefault();
+        }}
+      >
         <audio
           autoPlay={false}
           controls={false}
           preload={'none'}
           onTimeUpdate={() => this.updatePercentages()}
+          onPlay={() => this.onPlay()}
+          onPause={() => this.onPause()}
           ref={r => (this.audio = r)}
         >
           <source src={this.props.audioFileUrl} />
@@ -54,18 +63,32 @@ export class AudioPlayer extends React.Component<Props, State> {
   }
 
   private playAudio() {
-    this.audio!.play();
-    this.setState({ playing: true });
+    this.audio!.play().catch(err => {
+      console.error(err);
+    });
   }
 
   private stopAudio() {
     this.audio!.pause();
-    this.setState({ playing: false });
   }
 
   private updatePercentages() {
     const { audio } = this;
     // loaded = 100 * buffered.end(0) / audio.duration;
     this.setState({ position: audio!.currentTime / audio!.duration });
+  }
+
+  private setAudioPosition(deltaY: number) {
+    const { audio } = this;
+    audio!.currentTime += deltaY > 0 ? -1 : 1;
+    this.updatePercentages();
+  }
+
+  private onPlay() {
+    this.setState({ playing: true });
+  }
+
+  private onPause() {
+    this.setState({ playing: false });
   }
 }

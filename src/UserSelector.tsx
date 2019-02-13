@@ -1,7 +1,7 @@
 import React from 'react';
 import { MenuItem } from '@material-ui/core';
 import Avatar from '@material-ui/core/Avatar';
-import { get, SlackUser } from './SlackApi';
+import { getUsers, SlackUser, userName } from './SlackApi';
 import Select from '@material-ui/core/Select';
 import FormControl from '@material-ui/core/FormControl';
 import InputLabel from '@material-ui/core/InputLabel';
@@ -19,8 +19,8 @@ export class UserSelector extends React.Component<UserSelectorProps, UserSelecto
   state: UserSelectorState = { users: [] };
 
   componentWillMount() {
-    get('users.list').then(rsp => {
-      this.setState({ users: rsp.members });
+    getUsers().then(users => {
+      this.setState({ users });
     });
   }
 
@@ -58,8 +58,4 @@ export class UserSelector extends React.Component<UserSelectorProps, UserSelecto
       </FormControl>
     );
   }
-}
-
-function userName(user: SlackUser) {
-  return user.profile.display_name || user.name;
 }

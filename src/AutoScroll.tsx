@@ -37,7 +37,7 @@ export class AutoScroll extends React.Component<AutoScrollProps> {
         document.documentElement.offsetHeight;
     } else {
       this.scrollPercent = () => {
-        var style = window.getComputedStyle(this.scrollParent as HTMLElement, null);
+        const style = window.getComputedStyle(this.scrollParent as HTMLElement, null);
         const innerHeight = parseInt(style.getPropertyValue('height'));
         const scrollTop = parseInt(style.getPropertyValue('scrollTop'));
         const offsetHeight = parseInt(style.getPropertyValue('offsetHeight'));

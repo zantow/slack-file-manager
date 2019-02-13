@@ -1,14 +1,18 @@
-import { WithStyles } from '@material-ui/core';
 import MTooltip, { TooltipProps } from '@material-ui/core/Tooltip';
 import withStyles from '@material-ui/core/styles/withStyles';
 import React from 'react';
 import createStyles from '@material-ui/core/styles/createStyles';
 
 const styles = createStyles({
-  popper: arrowGenerator('#000'),
+  popper: {
+    ...arrowGenerator('#000'),
+    opacity: 1,
+  },
   tooltip: {
     backgroundColor: '#000',
     fontSize: '1.1em',
+    maxWidth: 'none',
+    opacity: 1,
   },
   arrow: {
     position: 'absolute',
@@ -87,12 +91,11 @@ export const Tooltip = withStyles(styles)(
       const { children, title, classes } = this.props;
       return (
         <MTooltip
-          classes={
-            {
-              popper: classes.popper,
-              tooltip: classes.tooltip,
-            } as any
-          }
+          classes={{
+            popper: classes.popper,
+            tooltip: classes.tooltip,
+          }}
+          leaveDelay={0 * 200000}
           placement={this.props.placement || 'right'}
           title={
             <React.Fragment>

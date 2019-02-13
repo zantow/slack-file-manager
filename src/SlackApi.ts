@@ -103,6 +103,7 @@ export interface SlackChannel {
 export interface SlackFile {
   id: string;
   name: string;
+  size: number;
   permalink: string;
   is_external: boolean;
   timestamp: number;

@@ -25,6 +25,9 @@ import { ErrorDisplay } from './ErrorDisplay';
 import { UserSelector } from './UserSelector';
 import { UserInfo } from './UserInfo';
 import { AutoScroll } from './AutoScroll';
+import CircularProgress from '@material-ui/core/CircularProgress';
+import { Link, Lock } from '@material-ui/icons';
+import filesize from 'filesize';
 
 const perPage = 20;
 
@@ -84,6 +87,7 @@ export class App extends Component<AppProps, AppState> {
       } else {
         files = rsp.files;
       }
+      files = files.sort((a, b) => (a.timestamp < b.timestamp ? 1 : -1));
       this.setState({
         files,
         lastPage: rsp.paging.page,
@@ -191,7 +195,7 @@ export class App extends Component<AppProps, AppState> {
                   key={file.id}
                   className="FileListItem"
                   button
-                  disabled={this.isPinned(file) || file.is_external}
+                  disabled={this.isPinned(file)}
                   onClick={() => {
                     this.setState({
                       selectedItems: {
@@ -210,16 +214,32 @@ export class App extends Component<AppProps, AppState> {
                   <ListItemText
                     primary={
                       <span>
+                        {this.isPinned(file) && (
+                          <Lock
+                            color={'disabled'}
+                            titleAccess="File is Pinned"
+                            className="FileLock"
+                          />
+                        )}
                         {file.name}{' '}
                         <a className="ExternalLink" href={file.permalink} target="open-in-slack">
                           <Launch />
                         </a>
                       </span>
                     }
-                    secondary={new Date(file.timestamp * 1000).toDateString()}
+                    secondary={`${new Date(file.timestamp * 1000).toDateString()} - ${filesize(
+                      file.size
+                    )}`}
                   />
                   <ListItemSecondaryAction>
-                    <div className="Preview">{this.renderPreview(file)}</div>
+                    <div className="Preview">
+                      {file.is_external && (
+                        <a href={file.url_private} target="open-file">
+                          <Link />
+                        </a>
+                      )}
+                      {!file.is_external && this.renderPreview(file)}
+                    </div>
                   </ListItemSecondaryAction>
                 </ListItem>
               ))}
@@ -227,16 +247,10 @@ export class App extends Component<AppProps, AppState> {
           </List>
 
           {this.state.loading && (
-            <Fab
-              color="primary"
-              variant="extended"
-              disabled
-              onClick={() => {
-                this.fetchFiles(this.state.lastPage + 1);
-              }}
-            >
+            <div className="LoadingSpinner">
+              <CircularProgress />
               Loading...
-            </Fab>
+            </div>
           )}
         </ErrorDisplay>
       </div>

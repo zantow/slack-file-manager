@@ -49,7 +49,14 @@
 .FileList .Preview {
   margin-right: 1em;
   overflow: hidden;
-  max-width: 200px;
+  max-width: 80px;
+}
+
+.FileList .FileLock {
+  height: 20px;
+  width: 20px;
+  vertical-align: middle;
+  margin: 0 2px 0 -3px;
 }
 
 .image-large .image-large {

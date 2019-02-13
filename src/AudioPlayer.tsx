@@ -3,10 +3,6 @@ import * as React from 'react';
 import PlayIcon from '@material-ui/icons/PlayCircleFilled';
 import PauseIcon from '@material-ui/icons/PauseCircleFilled';
 
-// @ts-ignore import
-import WaveSurfer from 'wavesurfer.js';
-import { Ref } from 'react';
-
 interface Props {
   audioFileUrl: string;
 }
@@ -40,11 +36,11 @@ export class AudioPlayer extends React.Component<Props, State> {
               <svg viewBox="0 0 42 42">
                 <circle
                   className="PlayPercentageValue"
-                  r="39%"
+                  r="35%"
                   cx="50%"
                   cy="50%"
                   style={{
-                    strokeDasharray: `${110 * position}, 100`,
+                    strokeDasharray: `${92 * position}, 100`,
                   }}
                 />
               </svg>

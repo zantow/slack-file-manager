@@ -19,36 +19,39 @@ function getScrollParent(element: HTMLElement, includeHidden: boolean) {
 
 interface AutoScrollProps {
   children: any;
-  onLoad: () => void;
+  onLoad: () => Promise<any>;
 }
 
 export class AutoScroll extends React.Component<AutoScrollProps> {
   scrollHandler: any;
   scrollParent: HTMLElement | Window | null = null;
+  scrollPercent?: () => number;
+  loading = false;
 
   componentDidMount() {
     const n = ReactDOM.findDOMNode(this) as HTMLElement;
     this.scrollParent = getScrollParent(n, true);
     if (this.scrollParent === window) {
-      this.scrollHandler = () => {
-        if (
-          window.innerHeight + document.documentElement.scrollTop ===
-          document.documentElement.offsetHeight
-        ) {
-          this.props.onLoad();
-        }
-      };
+      this.scrollPercent = () =>
+        (window.innerHeight + document.documentElement.scrollTop) /
+        document.documentElement.offsetHeight;
     } else {
-      this.scrollHandler = () => {
+      this.scrollPercent = () => {
         var style = window.getComputedStyle(this.scrollParent as HTMLElement, null);
         const innerHeight = parseInt(style.getPropertyValue('height'));
         const scrollTop = parseInt(style.getPropertyValue('scrollTop'));
         const offsetHeight = parseInt(style.getPropertyValue('offsetHeight'));
-        if (innerHeight + scrollTop === offsetHeight) {
-          this.props.onLoad();
-        }
+        return (innerHeight + scrollTop) / offsetHeight;
       };
     }
+    this.scrollHandler = () => {
+      if (!this.loading) {
+        if (this.scrollPercent!() > 0.9) {
+          this.loading = true;
+          this.props.onLoad().then(() => (this.loading = false));
+        }
+      }
+    };
     this.scrollParent.addEventListener('scroll', this.scrollHandler);
   }
 

@@ -34,8 +34,7 @@
     "test": "react-scripts test",
     "eject": "react-scripts eject",
     "precommit": "pretty-quick --staged",
-    "prettier": "prettier --write '**/*.{ts,tsx,css,scss}'",
-    "heroku-postbuild": "echo Skip build on Heroku"
+    "prettier": "prettier --write '**/*.{ts,tsx,css,scss}'"
   },
   "eslintConfig": {
     "extends": "react-app"

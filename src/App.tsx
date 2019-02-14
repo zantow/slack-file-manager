@@ -159,7 +159,7 @@ export class App extends Component<AppProps, AppState> {
     if (select) {
       const { selectedItems } = this.state;
       this.state.files.map(file => {
-        if (!this.isPinned(file) && !file.is_external) {
+        if (this.canDelete(file) && !file.is_external) {
           selectedItems[file.id] = true;
         }
       });
@@ -268,7 +268,7 @@ export class App extends Component<AppProps, AppState> {
                   key={file.id}
                   className="FileListItem"
                   button
-                  disabled={this.isPinned(file)}
+                  disabled={!this.canDelete(file)}
                   onClick={() => {
                     this.setState({
                       selectedItems: {
@@ -281,7 +281,7 @@ export class App extends Component<AppProps, AppState> {
                   <Checkbox
                     checked={selectedItems[file.id] ? true : false}
                     tabIndex={-1}
-                    disabled={this.isPinned(file)}
+                    disabled={!this.canDelete(file)}
                   />
                   <UserInfo userId={file.user} />
                   <ListItemText
@@ -289,7 +289,7 @@ export class App extends Component<AppProps, AppState> {
                       <span>
                         {this.isPinned(file) && (
                           <Lock
-                            color={'disabled'}
+                            color="disabled"
                             titleAccess="File is Pinned"
                             className="FileLock"
                           />
@@ -350,6 +350,14 @@ export class App extends Component<AppProps, AppState> {
             pin.message.files.filter(f => f.id === file.id).length > 0)
         );
       }).length > 0
+    );
+  }
+
+  private canDelete(file: SlackFile) {
+    return (
+      !this.isPinned(file) &&
+      this.state.currentUser &&
+      (this.state.currentUser.is_admin || this.state.currentUser!.id == file.user)
     );
   }
 }

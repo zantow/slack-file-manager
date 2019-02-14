@@ -2,11 +2,12 @@ import { dedupe } from './Dedupe';
 
 const clientId = '60448998578.533653717520';
 const clientSecret = '3bad701c22c6ed3770101b786bff03a6';
-const scopes = 'users:read,pins:read,channels:read,files:read,files:write:user';
+const scopes = 'users:read,users.profile:read,pins:read,channels:read,files:read,files:write:user';
 
 export const redirectUrl = `${window.location.protocol}//${window.location.host}/`;
 
 export const userCache: { [key: string]: SlackUser } = {};
+let accessToken: string | undefined = undefined;
 
 interface SlackApiParams {
   [key: string]: string | number | boolean | undefined;
@@ -40,6 +41,7 @@ function slackApiFetch(path: string, params: SlackApiParams, method: 'GET' | 'PO
           if (rsp.error === 'missing_scope') {
             setAccessToken();
           }
+          console.log(rsp);
           throw new Error('Invalid request');
         }
         return rsp;
@@ -55,28 +57,6 @@ export function post(path: string, params: SlackApiParams) {
   return slackApiFetch(path, params, 'POST');
 }
 
-/**
- * Authorize or redirect for authorization
- */
-export function authorize() {
-  const params = new URLSearchParams(window.location.search);
-  const code = params.get('code');
-  if (!code) {
-    window.location.assign(
-      `https://slack.com/oauth/authorize?client_id=${clientId}&scope=${scopes}&redirect_uri=${redirectUrl}`
-    );
-  } else {
-    fetch(
-      `https://slack.com/api/oauth.access?client_id=${clientId}&client_secret=${clientSecret}&code=${code}&redirect_uri=${redirectUrl}`
-    )
-      .then(res => res.json())
-      .then(rsp => {
-        setAccessToken(rsp.access_token);
-        window.location.assign(redirectUrl);
-      });
-  }
-}
-
 export function getCurrentUser(): Promise<SlackUser | null> {
   if (!getAccessToken()) {
     const params = new URLSearchParams(window.location.search);
@@ -84,19 +64,19 @@ export function getCurrentUser(): Promise<SlackUser | null> {
     if (!code) {
       return Promise.resolve(null);
     } else {
+      window.history.replaceState({}, 'Slack File Manager', '/');
       return fetch(
         `https://slack.com/api/oauth.access?client_id=${clientId}&client_secret=${clientSecret}&code=${code}&redirect_uri=${redirectUrl}`
       )
         .then(res => res.json())
         .then(rsp => {
           setAccessToken(rsp.access_token);
-          window.location.assign(redirectUrl);
-          return null;
+          return getCurrentUser();
         });
     }
   }
   return get('users.profile.get').then(rsp => {
-    return rsp as SlackUser;
+    return rsp;
   });
 }
 
@@ -124,13 +104,15 @@ export function userName(user: SlackUser) {
 }
 
 export function getAccessToken() {
-  return window.localStorage.getItem('accessToken');
+  return accessToken; // window.localStorage.getItem('accessToken');
 }
 
 export function setAccessToken(token: string | undefined = undefined) {
-  token
-    ? window.localStorage.setItem('accessToken', token)
-    : window.localStorage.removeItem('accessToken');
+  if (!token) {
+    accessToken = token; // window.localStorage.removeItem('accessToken');
+  } else {
+    accessToken = token; // window.localStorage.setItem('accessToken', token);
+  }
 }
 
 export interface SlackUser {

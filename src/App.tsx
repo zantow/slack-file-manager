@@ -59,9 +59,11 @@ export class App extends Component<AppProps, AppState> {
 
   componentWillMount(): void {
     getCurrentUser().then(u => {
-      if (u) {
+      if (!u) {
+        // do nothing
+      } else if (!u.id) {
         // This user does not have an id, we're going to best guess based on the display name...
-        this.setState({ currentUser: u, selectedUser: u }, () => {
+        this.setState({ currentUser: u }, () => {
           getUsers().then(users => {
             const usr = users.filter(m => userName(m) === userName(u))[0];
             const autoSelectUser = usr.is_admin ? undefined : usr;
@@ -186,19 +188,21 @@ export class App extends Component<AppProps, AppState> {
           >
             <img src={logo} className="App-logo" alt="logo" />
             <span>Slack File Manager</span>
-            <div className="ConnectToSlackButton">
-              <a
-                href={`https://slack.com/oauth/authorize?client_id=60448998578.533653717520&scope=files:write:user,users:read,pins:read,channels:read,files:read&redirect_uri=${redirectUrl}`}
-              >
-                <img
-                  alt="Sign in with Slack"
-                  height="40"
-                  width="172"
-                  src="https://platform.slack-edge.com/img/sign_in_with_slack.png"
-                  srcSet="https://platform.slack-edge.com/img/sign_in_with_slack.png 1x, https://platform.slack-edge.com/img/sign_in_with_slack@2x.png 2x"
-                />
-              </a>
-            </div>
+            {currentUser === undefined && (
+              <div className="ConnectToSlackButton">
+                <a
+                  href={`https://slack.com/oauth/authorize?client_id=60448998578.533653717520&scope=files:write:user,users:read,users.profile:read,pins:read,channels:read,files:read&redirect_uri=${redirectUrl}`}
+                >
+                  <img
+                    alt="Sign in with Slack"
+                    height="40"
+                    width="172"
+                    src="https://platform.slack-edge.com/img/sign_in_with_slack.png"
+                    srcSet="https://platform.slack-edge.com/img/sign_in_with_slack.png 1x, https://platform.slack-edge.com/img/sign_in_with_slack@2x.png 2x"
+                  />
+                </a>
+              </div>
+            )}
           </header>
         </div>
       );

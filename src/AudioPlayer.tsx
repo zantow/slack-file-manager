@@ -63,6 +63,9 @@ export class AudioPlayer extends React.Component<Props, State> {
   }
 
   private playAudio() {
+    document.querySelectorAll('audio').forEach(audio => {
+      audio.pause();
+    });
     this.audio!.play().catch(err => {
       console.error(err);
     });

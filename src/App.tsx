@@ -231,7 +231,9 @@ export class App extends Component<AppProps, AppState> {
             <ListItem>
               <Checkbox
                 checked={this.hasSelectedItems()}
-                disabled={!this.hasSelectedItems() && !this.state.selectedUser}
+                disabled={
+                  !this.hasSelectedItems() && !(this.state.selectedUser || this.state.selectedDate)
+                }
                 onChange={e => this.selectAll(e.target.checked)}
               />
               <UserSelector

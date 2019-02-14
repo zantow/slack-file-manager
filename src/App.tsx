@@ -15,6 +15,7 @@ import {
   getUsers,
   post,
   redirectUrl,
+  setAccessToken,
   SlackChannel,
   SlackFile,
   SlackPin,
@@ -26,7 +27,7 @@ import { UserSelector } from './UserSelector';
 import { UserInfo } from './UserInfo';
 import { AutoScroll } from './AutoScroll';
 import CircularProgress from '@material-ui/core/CircularProgress';
-import { Link, Lock } from '@material-ui/icons';
+import { ExitToApp, Link, Lock } from '@material-ui/icons';
 import filesize from 'filesize';
 import Avatar from '@material-ui/core/Avatar';
 import { FilePreview } from './FilePreview';
@@ -218,6 +219,12 @@ export class App extends Component<AppProps, AppState> {
                 <img src={currentUser.profile.image_48} alt={userName(currentUser)} />
               </Avatar>
               <span>{userName(currentUser)}</span>
+              <ExitToApp
+                onClick={() => {
+                  setAccessToken();
+                  window.location.replace('/');
+                }}
+              />
             </div>
           </header>
           <div className="FilterPanel">
@@ -270,7 +277,7 @@ export class App extends Component<AppProps, AppState> {
                   }}
                 >
                   <Checkbox
-                    checked={selectedItems[file.id]}
+                    checked={selectedItems[file.id] ? true : false}
                     tabIndex={-1}
                     disabled={this.isPinned(file)}
                   />

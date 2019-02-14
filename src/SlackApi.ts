@@ -6,6 +6,8 @@ const scopes = 'users:read,users.profile:read,pins:read,channels:read,files:read
 
 export const redirectUrl = `${window.location.protocol}//${window.location.host}/`;
 
+const autoLogin = false;
+const useLocalStorage = true;
 export const userCache: { [key: string]: SlackUser } = {};
 let accessToken: string | undefined = undefined;
 
@@ -62,6 +64,11 @@ export function getCurrentUser(): Promise<SlackUser | null> {
     const params = new URLSearchParams(window.location.search);
     const code = params.get('code');
     if (!code) {
+      if (autoLogin) {
+        window.location.replace(
+          `https://slack.com/oauth/authorize?client_id=60448998578.533653717520&scope=${scopes}&redirect_uri=${redirectUrl}`
+        );
+      }
       return Promise.resolve(null);
     } else {
       window.history.replaceState({}, 'Slack File Manager', '/');
@@ -104,14 +111,14 @@ export function userName(user: SlackUser) {
 }
 
 export function getAccessToken() {
-  return accessToken; // window.localStorage.getItem('accessToken');
+  return useLocalStorage ? window.localStorage.getItem('accessToken') : accessToken;
 }
 
 export function setAccessToken(token: string | undefined = undefined) {
   if (!token) {
-    accessToken = token; // window.localStorage.removeItem('accessToken');
+    useLocalStorage ? window.localStorage.removeItem('accessToken') : (accessToken = token);
   } else {
-    accessToken = token; // window.localStorage.setItem('accessToken', token);
+    useLocalStorage ? window.localStorage.setItem('accessToken', token) : (accessToken = token);
   }
 }
 

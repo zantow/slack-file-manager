@@ -15,6 +15,8 @@ interface SlackApiParams {
   [key: string]: string | number | boolean | undefined;
 }
 
+export const wait = (ms: number) => new Promise(yea => setTimeout(yea, ms));
+
 function slackApiFetch(path: string, params: SlackApiParams, method: 'GET' | 'POST' = 'GET') {
   let query = '';
   for (const k of Object.keys(params)) {
@@ -156,6 +158,7 @@ export interface SlackMessage {
 }
 
 export interface SlackPin {
+  channel?: string;
   message?: SlackMessage;
   file?: SlackFile;
 }

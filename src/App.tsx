@@ -21,6 +21,7 @@ import {
   SlackPin,
   SlackUser,
   userName,
+  wait,
 } from './SlackApi';
 import { ErrorDisplay } from './ErrorDisplay';
 import { UserSelector } from './UserSelector';
@@ -57,6 +58,9 @@ export class App extends Component<AppProps, AppState> {
     lastPage: 0,
     totalPages: 0,
   };
+  // Slack rate limits:
+  private Tier2: number = 60000 / 20; // 20+ / minute
+  private Tier3: number = 60000 / 50; // 50+ / minute
 
   componentWillMount(): void {
     getCurrentUser().then(u => {
@@ -126,14 +130,19 @@ export class App extends Component<AppProps, AppState> {
       exclude_members: true,
     })
       .then(rsp => {
+        let next: Promise<any> = Promise.resolve();
         for (const channel of rsp.channels as SlackChannel[]) {
-          get('pins.list', { channel: channel.id })
-            .then(rsp => {
-              this.setState({ pins: [...this.state.pins, ...rsp.items] });
-            })
-            .catch(err => {
-              console.error(err);
-            });
+          next = next.then(() =>
+            wait(this.Tier2).then(() =>
+              get('pins.list', { channel: channel.id })
+                .then(rsp => {
+                  this.setState({ pins: [...this.state.pins, ...rsp.items] });
+                })
+                .catch(err => {
+                  console.error(err);
+                })
+            )
+          );
         }
       })
       .catch(err => {
@@ -144,13 +153,16 @@ export class App extends Component<AppProps, AppState> {
   deleteFiles() {
     const { selectedItems } = this.state;
     for (const key of Object.keys(selectedItems)) {
+      let next = Promise.resolve();
       if (selectedItems[key]) {
-        post('files.delete', {
-          file: key,
-        }).then(() => {
-          delete selectedItems[key];
-          this.setState({ files: this.state.files.filter(file => file.id !== key) });
-        });
+        next = wait(this.Tier3).then(() =>
+          post('files.delete', {
+            file: key,
+          }).then(() => {
+            delete selectedItems[key];
+            this.setState({ files: this.state.files.filter(file => file.id !== key) });
+          })
+        );
       }
     }
   }

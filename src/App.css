@@ -10,7 +10,8 @@
 .App-logo {
   height: 80px;
   vertical-align: middle;
-  margin: 0 1em 0 0;
+  margin: 12px;
+  height: 56px;
 }
 
 .App-header {
